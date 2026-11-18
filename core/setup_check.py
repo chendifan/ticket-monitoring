@@ -150,6 +150,12 @@ def check_browser():
     la = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
     roots += [os.path.join(la, "ms-playwright"),
               os.path.expanduser("~/.cache/ms-playwright")]
+    # darwin 的标准缓存位是 ~/Library/Caches/ms-playwright（playwright 自己
+    # 就这么解析，与 main.py 冻结态那段同轨）。以前只查 LOCALAPPDATA 和
+    # ~/.cache：mac 上 LOCALAPPDATA 不存在 → 退化成 ~/ms-playwright，于是
+    # 内核明明装好了仍判"缺"（2026-11-18 用户实报：照提示装完没效果）。
+    if sys.platform == "darwin":
+        roots.append(os.path.expanduser("~/Library/Caches/ms-playwright"))
     for root in roots:
         try:
             names = os.listdir(root)
@@ -157,7 +163,10 @@ def check_browser():
             continue
         if any(n.startswith("chromium") for n in names):
             return _row(OK, "浏览器内核", "chromium 就绪（%s）" % root)
-    return _row(BAD, "浏览器内核", "没找到 chromium（缓存目录都不存在或为空）",
+    # 判据不可信时，"照提示做完还是报缺"没人能自证。把查过哪些目录说清。
+    return _row(BAD, "浏览器内核",
+                "没找到 chromium（查过：%s，都不存在或为空）"
+                % "、".join(roots),
                 "python -m playwright install chromium",
                 action="install_browser")
 

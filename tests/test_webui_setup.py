@@ -294,6 +294,30 @@ def test_modules_check_names_what_is_missing():
     assert "pip install" in r["fix"]
 
 
+def test_browser_check_probes_darwin_cache_dir(monkeypatch, tmp_path):
+    """darwin 的标准缓存位必须进判据（2026-11-18 用户实报）。
+
+    macOS 上照提示 `python -m playwright install chromium` 装完仍报 ❌：内核
+    在 ~/Library/Caches/ms-playwright，而判据只查 LOCALAPPDATA（mac 上退化成
+    ~/ms-playwright）与 ~/.cache ⇒ 内核在但读不到 = 假报警。
+    """
+    home = tmp_path / "home"
+    (home / "Library" / "Caches" / "ms-playwright" / "chromium-1255").mkdir(
+        parents=True)
+    monkeypatch.delenv("PLAYWRIGHT_BROWSERS_PATH", raising=False)
+    monkeypatch.delenv("LOCALAPPDATA", raising=False)
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setattr(sys, "platform", "darwin")
+    row = sc.check_browser()
+    assert row["level"] == sc.OK, row
+    assert "Library" in row["detail"], row
+    # 读不到时把查过哪些目录说清：让人能自证"不是没装，是没查到"
+    monkeypatch.setenv("HOME", str(tmp_path / "empty-home"))
+    row = sc.check_browser()
+    assert row["level"] == sc.BAD, row
+    assert "Library/Caches" in row["detail"], row
+
+
 def test_config_check_reads_platforms():
     r = sc.check_config()
     assert r["level"] in (sc.OK, sc.WARN, sc.BAD), r
