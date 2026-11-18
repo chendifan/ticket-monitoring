@@ -18,7 +18,7 @@ print("OK", sys.version.split()[0])
 PY
 
 echo
-echo "[2/5] 创建虚拟环境 $VENV（已存在则复用，不污染系统 Python）"
+echo "[2/5] 创建虚拟环境 ${VENV}（已存在则复用，不污染系统 Python）"
 if [ ! -x "$VENV/bin/python" ]; then
   "$PY" -m venv "$VENV"
 fi
