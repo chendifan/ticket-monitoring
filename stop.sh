@@ -7,34 +7,34 @@ cd "$(dirname "$0")"
 
 PID_FILE=".monitor.pid"
 pid=""
-if [ -f "$PID_FILE" ]; then
-  pid="$(cat "$PID_FILE" 2>/dev/null || true)"
+if [ -f "${PID_FILE}" ]; then
+  pid="$(cat "${PID_FILE}" 2>/dev/null || true)"
 fi
 
-if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
-  kill "$pid"
-  echo "已停止监控（PID $pid）"
-  rm -f "$PID_FILE"
+if [ -n "${pid}" ] && kill -0 "${pid}" 2>/dev/null; then
+  kill "${pid}"
+  echo "已停止监控（PID ${pid}）"
+  rm -f "${PID_FILE}"
   exit 0
 fi
 
-rm -f "$PID_FILE"
+rm -f "${PID_FILE}"
 self_dir="$(pwd)"
-found="$(pgrep -f "$self_dir/main.py" || true)"
-if [ -z "$found" ]; then
+found="$(pgrep -f "${self_dir}/main.py" || true)"
+if [ -z "${found}" ]; then
   echo "没有找到运行中的 main.py（可能未用 start.sh 启动）"
   exit 1
 fi
 
 echo "发现可能的监控进程："
-echo "$found"
+echo "${found}"
 printf "全部结束？(y/N) "
 read -r ans
-if [ "$ans" = "y" ] || [ "$ans" = "Y" ]; then
+if [ "${ans}" = "y" ] || [ "${ans}" = "Y" ]; then
   # shellcheck disable=SC2086
-  kill $found 2>/dev/null || true
+  kill ${found} 2>/dev/null || true
   sleep 1
-  echo "已发送停止信号；仍在运行的进程：$(pgrep -f "$self_dir/main.py" | tr '\n' ' ')"
+  echo "已发送停止信号；仍在运行的进程：$(pgrep -f "${self_dir}/main.py" | tr '\n' ' ')"
 else
   echo "已取消"
 fi
